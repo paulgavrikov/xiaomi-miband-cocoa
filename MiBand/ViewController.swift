@@ -43,11 +43,12 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
         stepsView.stringValue = "Searching"
         batteryView.stringValue = ""
         spinnerView.hidden = false
-        println("discovery")
+        print("discovery", terminator: "")
         centralManager.scanForPeripheralsWithServices(nil, options: nil)
     }
-    
-    func centralManager(central: CBCentralManager!, didDiscoverPeripheral peripheral: CBPeripheral!, advertisementData: (NSDictionary), RSSI: NSNumber!) {
+  
+    func centralManager(central: CBCentralManager, didDiscoverPeripheral peripheral: CBPeripheral, advertisementData: [String : AnyObject], RSSI: NSNumber)
+    {
         
         //println("Discovered: " + peripheral.name)
         if(peripheral.name == "MI") {
@@ -56,17 +57,17 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
             centralManager.stopScan()
             self.centralManager.connectPeripheral(peripheral, options: nil)
         } else {
-            println("skipped " + peripheral.name )
+            print("skipped " + peripheral.name!, terminator: "" )
         }
         
     }
     
-    func centralManagerDidUpdateState(central: CBCentralManager!) { //BLE status
+    func centralManagerDidUpdateState(central: CBCentralManager) { //BLE status
         var msg = ""
         switch (central.state) {
         case .PoweredOff:
             msg = "CoreBluetooth BLE hardware is powered off"
-            println("\(msg)")
+            print("\(msg)", terminator: "")
             stepsView.stringValue = "Please turn on Bluetooth and retry"
             
         case .PoweredOn:
@@ -77,33 +78,33 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
             }
             
         case .Resetting:
-            var msg = "CoreBluetooth BLE hardware is resetting"
+            msg = "CoreBluetooth BLE hardware is resetting"
             
         case .Unauthorized:
-            var msg = "CoreBluetooth BLE state is unauthorized"
+            msg = "CoreBluetooth BLE state is unauthorized"
             
         case .Unknown:
-            var msg = "CoreBluetooth BLE state is unknown"
+            msg = "CoreBluetooth BLE state is unknown"
             
         case .Unsupported:
-            var msg = "CoreBluetooth BLE hardware is unsupported on this platform"
+            msg = "CoreBluetooth BLE hardware is unsupported on this platform"
             stepsView.stringValue = "Your Mac does not support BLE"
             
         }
         output("State", data: msg)
     }
     
-    func centralManager(central: CBCentralManager!,didConnectPeripheral peripheral: CBPeripheral!)
+    func centralManager(central: CBCentralManager,didConnectPeripheral peripheral: CBPeripheral)
     {
         peripheral.delegate = self
         peripheral.discoverServices(nil)
         
     }
     
-    func peripheral(peripheral: CBPeripheral!, didDiscoverServices error: NSError!)
+    func peripheral(peripheral: CBPeripheral, didDiscoverServices error: NSError?)
     {
-        println("peripherial services")
-        if let servicePeripherals = peripheral.services as? [CBService]
+        print("peripherial services", terminator: "")
+        if let servicePeripherals = peripheral.services as [CBService]!
         {
             for servicePeripheral in servicePeripherals
             {
@@ -118,9 +119,9 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
         centralManager.scanForPeripheralsWithServices(nil, options: nil)
     }
     
-    func peripheral(peripheral: CBPeripheral!, didDiscoverCharacteristicsForService service: CBService!, error: NSError!) {
+    func peripheral(peripheral: CBPeripheral, didDiscoverCharacteristicsForService service: CBService, error: NSError?) {
       
-        if let charactericsArr = service.characteristics  as? [CBCharacteristic]
+        if let charactericsArr = service.characteristics  as [CBCharacteristic]!
         {
             for cc in charactericsArr
             {
@@ -132,10 +133,10 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
                     peripheral.writeValue(data, forCharacteristic: cc, type: CBCharacteristicWriteType.WithoutResponse)
                     output("Characteristic", data: cc)
                 } else if cc.UUID.UUIDString == "FF06" {
-                    println("READING STEPS")
+                    print("READING STEPS")
                     peripheral.readValueForCharacteristic(cc)
                 } else if cc.UUID.UUIDString == "FF0C" {
-                    println("READING BATTERY")
+                    print("READING BATTERY")
                     peripheral.readValueForCharacteristic(cc)
                 }
             }
@@ -143,17 +144,17 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
-    func peripheral(peripheral: CBPeripheral!, didUpdateValueForCharacteristic characteristic: CBCharacteristic!, error: NSError!) {
+    func peripheral(peripheral: CBPeripheral, didUpdateValueForCharacteristic characteristic: CBCharacteristic, error: NSError?) {
         
-        output("Data for "+characteristic.UUID.UUIDString, data: characteristic.value())
+        output("Data for "+characteristic.UUID.UUIDString, data: characteristic.value!)
         
         if(characteristic.UUID.UUIDString == "FF06") {
             spinnerView.hidden = true
-            var u16 = UnsafePointer<Int>(characteristic.value().bytes).memory
+            let u16 = UnsafePointer<Int>(characteristic.value!.bytes).memory
             stepsView.stringValue = ("\(u16) steps")
         } else if(characteristic.UUID.UUIDString == "FF0C") {
             spinnerView.hidden = true
-            var u16 = UnsafePointer<Int32>(characteristic.value().bytes).memory
+            var u16 = UnsafePointer<Int32>(characteristic.value!.bytes).memory
             u16 =  u16 & 0xff
             batteryView.stringValue = ("\(u16) % charged")
         }
@@ -162,7 +163,7 @@ class ViewController: NSViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     func output(description: String, data: AnyObject){
-        println("\(description): \(data)")
+        print("\(description): \(data)", terminator: "")
        // textField.text = textField.text + "\(description): \(data)\n"
     }
     
